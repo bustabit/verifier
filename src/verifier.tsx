@@ -242,7 +242,7 @@ export default function Verifier() {
           {gameGenerationFailed && (
             <Alert variant="warning">
               Got an error from Vx. Please verify that the game hash and number
-              are correct an try again.
+              are correct and that a minute has passed since the game ended. Then, try again.
             </Alert>
           )}
           {results.length ? (
