@@ -1,6 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 import {
-  Alert,
   Button,
   Col,
   Container,
@@ -9,18 +8,21 @@ import {
   Row,
   Spinner,
   Table,
-} from 'react-bootstrap';
-import { SubmitHandler, useForm } from 'react-hook-form';
+} from "react-bootstrap";
+import { SubmitHandler, useForm } from "react-hook-form";
 
-import { COMMITMENT, PREV_CHAIN_LENGTH, PREV_COMMITMENT } from './constants';
-import { GameResult, VerificationValues } from './verifier.worker';
+import {
+  TERMINATING_HASH,
+  PREV_CHAIN_LENGTH,
+  PREV_TERMINATING_HASH,
+} from "./constants";
+import { GameResult, VerificationValues } from "./verifier.worker";
 
 export default function Verifier() {
   const [results, setResults] = useState<Array<GameResult>>([]);
   const [terminatingHash, setTerminatingHash] = useState<string | null>(null);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [isLoadingFinalHash, setIsLoadingFinalHash] = useState(false);
-  const [gameGenerationFailed, setGameGenerationFailed] = useState(false);
 
   const workerRef = useRef<Worker | null>();
 
@@ -52,18 +54,16 @@ export default function Verifier() {
     }
 
     workerRef.current = new Worker(
-      new URL('./verifier.worker.ts', import.meta.url),
+      new URL("./verifier.worker.ts", import.meta.url),
       {
-        type: 'module',
+        type: "module",
       }
     );
 
     // update the UI when the worker posts messages
-    workerRef.current.addEventListener('message', (response) => {
-      const { failed, gameResult, done, terminatingHash } = response.data;
-      if (failed) {
-        setGameGenerationFailed(true);
-      } else if (done) {
+    workerRef.current.addEventListener("message", (response) => {
+      const { gameResult, done, terminatingHash } = response.data;
+      if (done) {
         setIsLoadingResults(false);
       } else if (gameResult) {
         setResults((prev) => [...prev, gameResult]);
@@ -83,12 +83,11 @@ export default function Verifier() {
     }
     setResults([]);
     setTerminatingHash(null);
-    setGameGenerationFailed(false);
     startWebWorker(values);
   };
 
-  const verifyChain = watch('verifyChain');
-  const isCurrentChain = watch('gameNumber') > PREV_CHAIN_LENGTH;
+  const verifyChain = watch("verifyChain");
+  const isCurrentChain = watch("gameNumber") > PREV_CHAIN_LENGTH;
   const isLoading = isLoadingResults || isLoadingFinalHash;
 
   return (
@@ -102,18 +101,18 @@ export default function Verifier() {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                textDecoration: 'none',
+                textDecoration: "none",
               }}
             >
               source code
-            </a>{' '}
-            |{' '}
+            </a>{" "}
+            |{" "}
             <a
               href="https://bitcointalk.org/index.php?topic=5485695.0"
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                textDecoration: 'none',
+                textDecoration: "none",
               }}
             >
               seeding event
@@ -153,7 +152,7 @@ export default function Verifier() {
                 <InputGroup.Text>Game hash</InputGroup.Text>
                 <Form.Control
                   disabled={isLoading}
-                  {...register('gameHash', {
+                  {...register("gameHash", {
                     required: true,
                     minLength: 64,
                     maxLength: 64,
@@ -167,7 +166,7 @@ export default function Verifier() {
                 <Form.Control
                   disabled={isLoading}
                   type="number"
-                  {...register('gameNumber', {
+                  {...register("gameNumber", {
                     required: true,
                     min: 1,
                     valueAsNumber: true,
@@ -184,7 +183,7 @@ export default function Verifier() {
                 <Form.Control
                   disabled={isLoading}
                   type="number"
-                  {...register('iterations', {
+                  {...register("iterations", {
                     required: true,
                     min: 1,
                     max: 1000,
@@ -196,11 +195,11 @@ export default function Verifier() {
               <Form.Check
                 disabled={isLoading}
                 label="Verify terminating hash"
-                {...register('verifyChain')}
+                {...register("verifyChain")}
               />
             </Form.Group>
             <Button disabled={isLoading || !isValid} type="submit">
-              Verify games {verifyChain ? 'and terminating hash' : ''}
+              Verify games {verifyChain ? "and terminating hash" : ""}
             </Button>
           </Form>
         </Col>
@@ -222,12 +221,14 @@ export default function Verifier() {
                     <Form.Control readOnly value={terminatingHash!} />
                   </InputGroup>
                   <Form.Text className="text-muted">
-                    Which matches commitment:{' '}
+                    Which matches commitment:{" "}
                     <span>
                       {terminatingHash ===
-                      (isCurrentChain ? COMMITMENT : PREV_COMMITMENT)
-                        ? '✅'
-                        : '❌'}
+                      (isCurrentChain
+                        ? TERMINATING_HASH
+                        : PREV_TERMINATING_HASH)
+                        ? "✅"
+                        : "❌"}
                     </span>
                   </Form.Text>
                 </>
@@ -239,12 +240,6 @@ export default function Verifier() {
 
       <Row className="mt-2">
         <Col>
-          {gameGenerationFailed && (
-            <Alert variant="warning">
-              Got an error from Vx. Please verify that the game hash and number
-              are correct and that a minute has passed since the game ended. Then, try again.
-            </Alert>
-          )}
           {results.length ? (
             <>
               <Table striped hover responsive borderless>
@@ -252,7 +247,6 @@ export default function Verifier() {
                   <tr>
                     <th>Game</th>
                     <th>Bust</th>
-                    {isCurrentChain && <th>Verified</th>}
                     <th>Hash</th>
                   </tr>
                 </thead>
@@ -261,34 +255,29 @@ export default function Verifier() {
                     <tr key={result.id}>
                       <td>
                         <a
-                          href={'https://bustabit.com/game/' + result.id}
+                          href={"https://bustabit.com/game/" + result.id}
                           target="_blank"
                           style={{
-                            color: 'inherit',
-                            textDecoration: 'none',
+                            color: "inherit",
+                            textDecoration: "none",
                           }}
                         >
                           {result.id}
                         </a>
                       </td>
                       <td
-                        style={{ color: result.bust >= 1.98 ? 'green' : 'red' }}
+                        style={{ color: result.bust >= 1.98 ? "green" : "red" }}
                       >
                         {result.bust}x
                       </td>
-                      {isCurrentChain && (
-                        <td className="text-center">
-                          {result.verified ? '✅' : '❌'}
-                        </td>
-                      )}
                       <td>{result.hash}</td>
                     </tr>
                   ))}
                 </tbody>
-              </Table>{' '}
+              </Table>{" "}
               {isLoadingResults && (
                 <>
-                  Loading more game results{' '}
+                  Loading more game results{" "}
                   <Spinner animation="border" size="sm" />
                 </>
               )}

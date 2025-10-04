@@ -1,14 +1,19 @@
-import { sha256 } from '@noble/hashes/sha256';
-import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
+import { sha256 } from "@noble/hashes/sha256";
+import { bytesToHex, hexToBytes, utf8ToBytes } from "@noble/hashes/utils";
 
-import { GAME_SALT, PREV_GAME_SALT, PREV_CHAIN_LENGTH } from './constants';
-import { gameResult } from './utils/math';
-import { getVxSignature } from './utils/vx';
+import {
+  VX_GAME_SALT,
+  PREV_GAME_SALT,
+  PREV_CHAIN_LENGTH,
+  VX_LAST_GAME,
+  GAME_SALT,
+} from "./constants";
+import { gameResult } from "./utils/math";
+import { getVxSignature } from "./utils/vx";
 
 export type GameResult = {
   id: number;
   bust: number;
-  verified: boolean;
   hash: string;
 };
 
@@ -22,7 +27,7 @@ export interface VerificationValues {
 // Contains the logic to verify game results and the terminating hash.
 // It sends results to the main thread, which listens to messages from the worker.
 // Note: it can only verify games from either the current or the previous hash-chain at a time.
-async function calculateResults(
+function calculateResults(
   gameNumber: number,
   gameHashHex: string,
   iterations: number,
@@ -46,31 +51,25 @@ async function calculateResults(
     }
 
     let bust = 0;
-    let verified = false;
 
     // only compute the game results we need
     if (iterations-- > 0) {
       if (isPreviousChain) {
         bust = gameResult(PREV_GAME_SALT, currentGameHash);
       } else {
-        const vxSignature = await getVxSignature(
-          gameId,
-          GAME_SALT,
-          currentGameHash
-        );
-        if (!vxSignature) {
-          sendDoneSignal();
-          sendError();
-          break;
+        // the current chain was being used with Vx
+        if (gameId <= VX_LAST_GAME) {
+          const vxSignature = getVxSignature(VX_GAME_SALT, currentGameHash);
+          bust = gameResult(vxSignature.signature, currentGameHash);
+        } else {
+          // but we switched back to the classic scheme after it shut down
+          bust = gameResult(utf8ToBytes(GAME_SALT), currentGameHash);
         }
-        verified = vxSignature.verified;
-        bust = gameResult(vxSignature.signature, currentGameHash);
       }
 
       sendGameResult({
         id: gameId,
         bust,
-        verified,
         hash: bytesToHex(currentGameHash),
       });
 
@@ -89,19 +88,13 @@ async function calculateResults(
 }
 
 self.addEventListener(
-  'message',
+  "message",
   async ({
     data: { gameHash, gameNumber, iterations, verifyChain },
   }: MessageEvent<VerificationValues>) => {
-    await calculateResults(gameNumber, gameHash, iterations, verifyChain);
+    calculateResults(gameNumber, gameHash, iterations, verifyChain);
   }
 );
-
-function sendError() {
-  self.postMessage({
-    failed: true,
-  });
-}
 
 function sendDoneSignal() {
   self.postMessage({
