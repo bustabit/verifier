@@ -108,7 +108,7 @@ export default function Verifier() {
             </a>{" "}
             |{" "}
             <a
-              href="https://bitcointalk.org/index.php?topic=5485695.0"
+              href="https://bitcointalk.org/index.php?topic=5560454"
               target="_blank"
               rel="noopener noreferrer"
               style={{
