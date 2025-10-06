@@ -35,6 +35,8 @@ export default function Verifier() {
     };
   }, []);
 
+  const params = new URLSearchParams(window.location.search);
+
   const {
     formState: { isValid },
     handleSubmit,
@@ -44,6 +46,10 @@ export default function Verifier() {
     defaultValues: {
       iterations: 10,
       verifyChain: false,
+      gameHash: params.get("hash") || "",
+      gameNumber: params.has("game")
+        ? parseInt(params.get("game") || "0")
+        : undefined,
     },
   });
 
