@@ -1,5 +1,3 @@
-export const APP_SLUG = "bustabit";
-
 // from bustabit's current seeding event: https://bitcointalk.org/index.php?topic=5560454
 export const GAME_SALT = "00000000000000000001e08b7fd44f95e3e950ac65650a8031a6d5e1750e34be";
 export const TERMINATING_HASH = "567a98370fb7545137ddb53687723cf0b8a1f5e93b1f76f4a1da29416930fa59";
