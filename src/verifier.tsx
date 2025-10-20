@@ -1,12 +1,23 @@
 import { useState, useRef, useEffect } from "react";
-import { Button, Col, Container, Form, InputGroup, Row, Spinner, Table } from "react-bootstrap";
+import {
+  Button,
+  Col,
+  Container,
+  Form,
+  InputGroup,
+  Row,
+  Spinner,
+  Table,
+} from "react-bootstrap";
 import { SubmitHandler, useForm } from "react-hook-form";
 
-import { TERMINATING_HASH, PREV_CHAIN_LENGTH, PREV_TERMINATING_HASH } from "./constants";
+import {
+  TERMINATING_HASH,
+  PREV_CHAIN_LENGTH,
+  PREV_TERMINATING_HASH,
+} from "./constants";
 import { GameResult, VerificationValues } from "./verifier.worker";
 import bablogo from "../icons/bablogo.png";
-import fairIcon from "../icons/balance.png";
-import transparency from "../icons/transparency.png";
 
 export default function Verifier() {
   const [results, setResults] = useState<Array<GameResult>>([]);
@@ -37,7 +48,9 @@ export default function Verifier() {
       iterations: 10,
       verifyChain: false,
       gameHash: params.get("hash") || "",
-      gameNumber: params.has("game") ? parseInt(params.get("game") || "0") : undefined,
+      gameNumber: params.has("game")
+        ? parseInt(params.get("game") || "0")
+        : undefined,
     },
   });
 
@@ -47,9 +60,12 @@ export default function Verifier() {
       workerRef.current.terminate();
     }
 
-    workerRef.current = new Worker(new URL("./verifier.worker.ts", import.meta.url), {
-      type: "module",
-    });
+    workerRef.current = new Worker(
+      new URL("./verifier.worker.ts", import.meta.url),
+      {
+        type: "module",
+      }
+    );
 
     // update the UI when the worker posts messages
     workerRef.current.addEventListener("message", (response) => {
@@ -78,7 +94,8 @@ export default function Verifier() {
   };
 
   const verifyChain = watch("verifyChain");
-  const isCurrentChain = watch("gameNumber") > PREV_CHAIN_LENGTH;
+  // we need to prevent the UI from dynamically updating when changing the game number. (Only update when we click the submit button.)
+  const isCurrentChain = results[0]?.id > PREV_CHAIN_LENGTH;
   const isLoading = isLoadingResults || isLoadingFinalHash;
 
   return (
@@ -86,19 +103,11 @@ export default function Verifier() {
       <Row className="mb-0">
         <Col>
           <h1 className="mb-0">
-            <img src={bablogo} style={{ height: "55px", marginRight: ".5rem" }} />
-            <span
-              style={{
-                color: "#e58929",
-                fontFamily: "Courier New,sans-serif",
-                fontWeight: "600",
-                letterSpacing: "2px",
-                marginRight: ".8rem",
-              }}
-            >
-              bustabit
-            </span>
-            <span style={{ color: "black", fontWeight: "normal" }}>game verifier </span>
+            <img
+              src={bablogo}
+              style={{ height: "3rem", marginRight: ".5rem" }}
+            />
+            bustabit game verifier
           </h1>
 
           <small>
@@ -130,15 +139,22 @@ export default function Verifier() {
       <Row className="mt-3 mb-2">
         <Col>
           <p>
-            bustabit is provably fair, which means that players themselves can verify that the game outcomes were decided fairly. Here's
-            how:
+            bustabit is provably fair, which means that players themselves can
+            verify that the game outcomes were decided fairly. Here's how:
           </p>
           <ol>
             <li>
-              Open the game information page of the game you'd like to verify. Copy & paste the hash and game number to the form below.
+              Open the game information page of the game you'd like to verify.
+              Copy & paste the hash and game number to the form below.
             </li>
-            <li>Verify that the calculated game bust and hash in the table match the information on the game information page.</li>
-            <li>Verify that the terminating hash matches the hash of the chain's last element.</li>
+            <li>
+              Verify that the calculated game bust and hash in the table match
+              the information on the game information page.
+            </li>
+            <li>
+              Verify that the terminating hash matches the hash of the chain's
+              last element.
+            </li>
           </ol>
         </Col>
       </Row>
@@ -174,7 +190,9 @@ export default function Verifier() {
               </InputGroup>
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Text className="text-muted">How many games do you want to verify?</Form.Text>
+              <Form.Text className="text-muted">
+                How many games do you want to verify?
+              </Form.Text>
               <InputGroup>
                 <InputGroup.Text>Iterations</InputGroup.Text>
                 <Form.Control
@@ -189,7 +207,11 @@ export default function Verifier() {
               </InputGroup>
             </Form.Group>
             <Form.Group className="mb-3" controlId="submitFlow">
-              <Form.Check disabled={isLoading} label="Verify terminating hash" {...register("verifyChain")} />
+              <Form.Check
+                disabled={isLoading}
+                label="Verify terminating hash"
+                {...register("verifyChain")}
+              />
             </Form.Group>
             <Button disabled={isLoading || !isValid} type="submit">
               Verify games {verifyChain ? "and terminating hash" : ""}
@@ -203,7 +225,8 @@ export default function Verifier() {
           <Col>
             {isLoadingFinalHash ? (
               <>
-                Hold tight, hashing through the hash chain to find terminating hash <Spinner animation="border" size="sm" />
+                Hold tight, hashing through the hash chain to find terminating
+                hash <Spinner animation="border" size="sm" />
               </>
             ) : (
               terminatingHash && (
@@ -214,10 +237,16 @@ export default function Verifier() {
                   </InputGroup>
                   <Form.Text
                     className={
-                      terminatingHash === (isCurrentChain ? TERMINATING_HASH : PREV_TERMINATING_HASH) ? "text-success" : "text-danger"
+                      terminatingHash ===
+                      (isCurrentChain
+                        ? TERMINATING_HASH
+                        : PREV_TERMINATING_HASH)
+                        ? "text-success"
+                        : "text-danger"
                     }
                   >
-                    {terminatingHash === (isCurrentChain ? TERMINATING_HASH : PREV_TERMINATING_HASH)
+                    {terminatingHash ===
+                    (isCurrentChain ? TERMINATING_HASH : PREV_TERMINATING_HASH)
                       ? "✅ This game is on the same hash chain as the terminating hash."
                       : "❌ This game is not on the same hash chain as the terminating hash."}{" "}
                   </Form.Text>
@@ -255,7 +284,11 @@ export default function Verifier() {
                           {result.id}
                         </a>
                       </td>
-                      <td style={{ color: result.bust >= 1.98 ? "green" : "red" }}>{result.bust}x</td>
+                      <td
+                        style={{ color: result.bust >= 1.98 ? "green" : "red" }}
+                      >
+                        {result.bust}x
+                      </td>
                       <td>{result.hash}</td>
                     </tr>
                   ))}
@@ -263,7 +296,8 @@ export default function Verifier() {
               </Table>{" "}
               {isLoadingResults && (
                 <>
-                  Loading more game results <Spinner animation="border" size="sm" />
+                  Loading more game results{" "}
+                  <Spinner animation="border" size="sm" />
                 </>
               )}
             </>
