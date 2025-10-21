@@ -17,6 +17,7 @@ import {
   PREV_TERMINATING_HASH,
 } from "./constants";
 import { GameResult, VerificationValues } from "./verifier.worker";
+import bablogo from "../icons/bablogo.png";
 
 export default function Verifier() {
   const [results, setResults] = useState<Array<GameResult>>([]);
@@ -93,14 +94,22 @@ export default function Verifier() {
   };
 
   const verifyChain = watch("verifyChain");
-  const isCurrentChain = watch("gameNumber") > PREV_CHAIN_LENGTH;
+  // we need to prevent the UI from dynamically updating when changing the game number. (Only update when we click the submit button.)
+  const isCurrentChain = results[0]?.id > PREV_CHAIN_LENGTH;
   const isLoading = isLoadingResults || isLoadingFinalHash;
 
   return (
     <Container fluid className="p-4">
       <Row className="mb-0">
         <Col>
-          <h1 className="mb-0">bustabit game verifier</h1>
+          <h1 className="mb-0">
+            <img
+              src={bablogo}
+              style={{ height: "3rem", marginRight: ".5rem" }}
+            />
+            bustabit game verifier
+          </h1>
+
           <small>
             <a
               href="https://github.com/bustabit/verifier"
@@ -197,7 +206,7 @@ export default function Verifier() {
                 />
               </InputGroup>
             </Form.Group>
-            <Form.Group className="mb-3">
+            <Form.Group className="mb-3" controlId="submitFlow">
               <Form.Check
                 disabled={isLoading}
                 label="Verify terminating hash"
@@ -226,16 +235,20 @@ export default function Verifier() {
                     <InputGroup.Text>Terminating hash</InputGroup.Text>
                     <Form.Control readOnly value={terminatingHash!} />
                   </InputGroup>
-                  <Form.Text className="text-muted">
-                    Which matches commitment:{" "}
-                    <span>
-                      {terminatingHash ===
+                  <Form.Text
+                    className={
+                      terminatingHash ===
                       (isCurrentChain
                         ? TERMINATING_HASH
                         : PREV_TERMINATING_HASH)
-                        ? "✅"
-                        : "❌"}
-                    </span>
+                        ? "text-success"
+                        : "text-danger"
+                    }
+                  >
+                    {terminatingHash ===
+                    (isCurrentChain ? TERMINATING_HASH : PREV_TERMINATING_HASH)
+                      ? "✅ This game is on the same hash chain as the terminating hash."
+                      : "❌ This game is not on the same hash chain as the terminating hash."}{" "}
                   </Form.Text>
                 </>
               )
